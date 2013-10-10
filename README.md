@@ -9,7 +9,7 @@ Open script file with AppleScript editor.
 
 Select File->Export
 
-Export as a Script Bundle to the Outlook Script Menu folder
+Export as a Script Bundle and move to the Outlook Script Menu folder
 
 (~/[User]/Library/Application Support/Microsoft/Office/Outlook Script Menu Items)
 
