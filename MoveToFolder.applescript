@@ -48,6 +48,7 @@ tell application "Microsoft Outlook"
 		set processEmail to false
 		set secondaryEmail to false
 		set baseFolder to null
+		set oldDelims to AppleScript's text item delimiters
 		
 		set theMessageBody to content of theMessage as text
 		set theSubject to the subject of theMessage
@@ -97,13 +98,18 @@ tell application "Microsoft Outlook"
 				else
 					(*Pull ticket number from the ticketing url number*)
 					(*This should still theoretically work for Ticketing*)
-					set oldDelims to AppleScript's text item delimiters
 					set AppleScript's text item delimiters to "<a href=\"http://ticketing.jhtna.com/ticket/detail/"
-					set theMessageBody to text item 2 of theMessageBody
+					try
+						set theParsedMessageBody to text item 2 of theMessageBody
+					on error errmsg number errNum
+						log "Unknown Ticketing Email"
+						set AppleScript's text item delimiters to oldDelims
+						exit repeat
+					end try
 					set AppleScript's text item delimiters to "\">"
 					try
-						set theMessageBody to text item 1 of theMessageBody as number
-						set searchFolder to "Ticket #" & theMessageBody
+						set theParsedMessageBody to text item 1 of theParsedMessageBody as number
+						set searchFolder to "Ticket #" & theParsedMessageBody
 						set AppleScript's text item delimiters to oldDelims
 						set validEmail to true
 					on error errmsg
@@ -112,6 +118,31 @@ tell application "Microsoft Outlook"
 					end try
 					(*End type determination*)
 				end if
+				
+				
+				(*Process the body for the description text*)
+				set AppleScript's text item delimiters to "The ticket &quot;"
+				if theMessageBody contains "The ticket: &quot;" then
+					set AppleScript's text item delimiters to "The ticket: &quot;"
+				end if
+				try
+					set theParsedMessageBody to text item 2 of theMessageBody
+				on error errmsg
+					log "Unknown Ticket Email"
+					exit repeat
+				end try
+				set AppleScript's text item delimiters to "&quot; has"
+				try
+					set theParsedMessageBody to text item 1 of theParsedMessageBody
+					set searchFolder to searchFolder & " - " & theParsedMessageBody
+					set AppleScript's text item delimiters to oldDelims
+					set validEmail to true
+				on error errmsg
+					set AppleScript's text item delimiters to oldDelims
+					log errmsg
+				end try
+				(*End processing body for description text*)
+				
 				(*Process if detected as onTime email*)
 			else if processType = "onTime" then
 				set baseFolder to onTimeFolder
@@ -150,17 +181,16 @@ tell application "Microsoft Outlook"
 					set oldDelims to AppleScript's text item delimiters
 					set AppleScript's text item delimiters to "OnTime Notification: Feature ID [#"
 					try
-						set theMessageBody to text item 2 of theMessageBody
+						set theParsedMessageBody to text item 2 of theMessageBody
 					on error errmsg
 						log "Unknown OnTime Email"
 						exit repeat
 					end try
 					set AppleScript's text item delimiters to "]"
 					try
-						set theMessageBody to text item 1 of theMessageBody as number
-						set searchFolder to "OnTime #" & theMessageBody
+						set theParsedMessageBody to text item 1 of theParsedMessageBody as number
+						set searchFolder to "OnTime #" & theParsedMessageBody
 						set AppleScript's text item delimiters to oldDelims
-						set validEmail to true
 					on error errmsg
 						set AppleScript's text item delimiters to oldDelims
 						log errmsg
@@ -168,6 +198,25 @@ tell application "Microsoft Outlook"
 					(*******************)
 					log "Processed Secondary Email"
 				end if
+				(*Process the body for the description text*)
+				set AppleScript's text item delimiters to "<span style=\"color: #444;\">| "
+				try
+					set theParsedMessageBody to text item 2 of theMessageBody
+				on error errmsg
+					log "Unknown OnTime Email"
+					exit repeat
+				end try
+				set AppleScript's text item delimiters to "</span></b>"
+				try
+					set theParsedMessageBody to text item 1 of theParsedMessageBody
+					set searchFolder to searchFolder & " - " & theParsedMessageBody
+					set AppleScript's text item delimiters to oldDelims
+					set validEmail to true
+				on error errmsg
+					set AppleScript's text item delimiters to oldDelims
+					log errmsg
+				end try
+				(*End processing body for description text*)
 			else
 				(*Script can't process this email*)
 				log "Unknown Email"
