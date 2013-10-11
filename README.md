@@ -7,6 +7,8 @@ Sort ticket and task emails to specific task numbered folders within outlook.
 ###Download and export to your Outlook Script Menu folder.
 Open script file with AppleScript editor. 
 
+Compile the script
+
 Select File->Export
 
 Export as a Script Bundle and move to the Outlook Script Menu folder
